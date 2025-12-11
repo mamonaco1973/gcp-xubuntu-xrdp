@@ -1,7 +1,7 @@
 
 #!/bin/bash
 
-cd 02-servers
+cd 03-servers
 
 terraform init
 terraform destroy -auto-approve

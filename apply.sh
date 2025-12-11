@@ -25,8 +25,8 @@ fi
 # Return to the previous (parent) directory.
 cd ..
 
-# Phase 2 of the build - Build VMs connected to active directory
-cd 02-servers
+# Phase 3 of the build - Build VMs connected to active directory
+cd 03-servers
 
 # Initialize Terraform (download providers, set up backend, etc.) for server deployment.
 terraform init
