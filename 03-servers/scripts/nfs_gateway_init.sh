@@ -66,8 +66,8 @@ mount /home                                          # Mount /home from NFS
 
 # Pull AD admin credentials from GCP Secret Manager
 secretValue=$(gcloud secrets versions access latest --secret="admin-ad-credentials")
-admin_password=$(echo $secretValue | jq -r '.password')      # Extract password
-admin_username=$(echo $secretValue | jq -r '.username' | sed 's/.*\\//') # Extract username w/o domain
+admin_password=$(echo $secretValue | jq -r '.password')                 # Extract password
+admin_username=$(echo $secretValue | jq -r '.username' | sed 's/@.*//') # Extract username w/o domain
 
 # Use `realm` to join the AD domain (via Samba membership software)
 # Credentials piped in securely, logs captured for troubleshooting

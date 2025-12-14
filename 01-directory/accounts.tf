@@ -104,7 +104,7 @@ resource "google_secret_manager_secret_version" "ad_secret_version" {
   secret  = google_secret_manager_secret.ad_secret[each.key].id
 
   secret_data = jsonencode({
-    username = "MCLOUD\\${each.key}"
+    username = "${each.key}@${var.dns_zone}"
     password = local.passwords[each.key]
   })
 }
