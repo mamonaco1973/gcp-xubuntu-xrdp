@@ -14,7 +14,7 @@ module "mini_ad" {
   realm             = var.realm                                    # Kerberos realm (usually UPPERCASE DNS domain)
   users_json        = local.users_json                             # JSON blob of users and passwords (built below)
   user_base_dn      = var.user_base_dn                             # Base DN for user accounts in LDAP
-  ad_admin_password = random_password.admin_password.result        # Randomized AD administrator password
+  ad_admin_password = local.passwords["admin"]                     # Randomized AD administrator password
   dns_zone          = var.dns_zone                                 # DNS zone (e.g., mcloud.mikecloud.com)
   subnetwork        = google_compute_subnetwork.ad_subnet.id       # Subnet for AD VM placement
   email             = local.service_account_email                  # Service account email
@@ -37,13 +37,14 @@ module "mini_ad" {
 
 locals {
   users_json = templatefile("./scripts/users.json.template", {
-    USER_BASE_DN    = var.user_base_dn                       # Base DN for placing new users in LDAP
-    DNS_ZONE        = var.dns_zone                           # AD-integrated DNS zone
-    REALM           = var.realm                              # Kerberos realm (FQDN in uppercase)
-    NETBIOS         = var.netbios                            # NetBIOS domain name
-    jsmith_password = random_password.jsmith_password.result # Random password for John Smith
-    edavis_password = random_password.edavis_password.result # Random password for Emily Davis
-    rpatel_password = random_password.rpatel_password.result # Random password for Raj Patel
-    akumar_password = random_password.akumar_password.result # Random password for Amit Kumar
+    USER_BASE_DN    = var.user_base_dn            # Base DN for placing new users in LDAP
+    DNS_ZONE        = var.dns_zone                # AD-integrated DNS zone
+    REALM           = var.realm                   # Kerberos realm (FQDN in uppercase)
+    NETBIOS         = var.netbios                 # NetBIOS domain name
+    jsmith_password = local.passwords["jsmith"]  # Random password for John Smith
+    edavis_password = local.passwords["edavis"]  # Random password for Emily Davis
+    rpatel_password = local.passwords["rpatel"]  # Random password for Raj Patel
+    akumar_password = local.passwords["akumar"]  # Random password for Amit Kumar
   })
 }
+
