@@ -1,11 +1,11 @@
 # ==============================================================================
-# Packer Build: Xubuntu Image for Azure (Ubuntu 24.04 LTS)
-#------------------------------------------------------------------------------
+# PACKER BUILD: Xubuntu Image for GCP (Ubuntu 24.04 LTS)
+# ------------------------------------------------------------------------------
 # Purpose:
-#   - Builds a custom Azure Managed Image with Xubuntu and XRDP
-#   - Starts from Canonical Ubuntu 24.04 LTS
-#   - Installs desktop env, tools, browsers, and dev utilities
-#   - Produces a timestamped image for VM or VMSS deployments
+#   - Builds a custom Google Compute Engine image with Xubuntu + XRDP
+#   - Starts from the Canonical Ubuntu 24.04 LTS image family
+#   - Installs desktop environment, browsers, dev tools, and utilities
+#   - Publishes a timestamped image into an image family for reuse in GCE
 # ==============================================================================
 
 packer {
@@ -17,136 +17,177 @@ packer {
   }
 }
 
-############################################
+# ==============================================================================
 # LOCALS: TIMESTAMP UTILITY
-############################################
+# ==============================================================================
 
 locals {
-  timestamp = regex_replace(timestamp(), "[- TZ:]", "") # Generate compact timestamp (YYYYMMDDHHMMSS)
-                                                       # Used for unique image names
+  timestamp = regex_replace(timestamp(), "[- TZ:]", "") # Compact timestamp (YYYYMMDDHHMMSS)
+                                                       # Used to generate unique image names
 }
 
+# ==============================================================================
+# INPUT VARIABLES
+# ==============================================================================
+
 variable "project_id" {
-  description = "GCP Project ID"
+  description = "GCP project ID that will own the image"
   type        = string
 }
 
 variable "zone" {
-  description = "GCP Zone"
+  description = "GCP zone used for the temporary build VM"
   type        = string
   default     = "us-central1-a"
 }
 
 variable "source_image_family" {
-  description = "Source image family to base the build on (e.g., ubuntu-2404-lts-amd64)"
+  description = "Base GCP image family (e.g., ubuntu-2404-lts-amd64)"
   type        = string
   default     = "ubuntu-2404-lts-amd64"
 }
 
-source "googlecompute" "xubuntu_image" {
-  project_id            = var.project_id
-  zone                  = var.zone
-  source_image_family   = var.source_image_family # Specifies the base image family
-  ssh_username          = "ubuntu"                # Specify the SSH username
-  machine_type          = "e2-standard-2"         # Machine type for the build VM
+# ==============================================================================
+# SOURCE: GCE IMAGE BUILDER
+# ==============================================================================
 
-  image_name            = "xubuntu-image-${local.timestamp}" # Use local.timestamp directly
-  image_family          = "xubuntu-images"          # Image family to group related images
-  disk_size             = 64                        # Disk size in GB
+source "googlecompute" "xubuntu_image" {
+  project_id          = var.project_id
+  zone                = var.zone
+  source_image_family = var.source_image_family         # Base Ubuntu 24.04 LTS image family
+  ssh_username        = "ubuntu"                        # Default Ubuntu user on GCE images
+  machine_type        = "e2-standard-2"                 # Temporary build VM machine type
+
+  image_name   = "xubuntu-image-${local.timestamp}"     # Unique image name per build
+  image_family = "xubuntu-images"                       # Image family for versioned builds
+  disk_size    = 64                                     # Boot disk size (GB) for build VM
 }
 
+# ==============================================================================
+# BUILD: PROVISIONING SCRIPTS
 # ------------------------------------------------------------------------------
-# Build Block: Provisioning Scripts
-# - Executes each setup script inside the build VM
-# ------------------------------------------------------------------------------
+# Executes each setup script inside the temporary build VM. Each script should be
+# idempotent and safe to re-run during iterative development.
+# ==============================================================================
+
 build {
   sources = ["source.googlecompute.xubuntu_image"]
 
-  # Base packages
+  # ----------------------------------------------------------------------------
+  # Base OS packages and prerequisites
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./packages.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # Xubuntu desktop
+  # ----------------------------------------------------------------------------
+  # Xubuntu desktop environment
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./xubuntu.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # XRDP
+  # ----------------------------------------------------------------------------
+  # XRDP remote desktop services and session configuration
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./xrdp.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # Chrome
+  # ----------------------------------------------------------------------------
+  # Google Chrome browser installation
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./chrome.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # Firefox
+  # ----------------------------------------------------------------------------
+  # Firefox browser installation/configuration
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./firefox.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # VS Code
+  # ----------------------------------------------------------------------------
+  # Visual Studio Code installation/configuration
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./vscode.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # HashiCorp tools
+  # ----------------------------------------------------------------------------
+  # HashiCorp CLI tools (e.g., Terraform, Packer)
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./hashicorp.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # AWS CLI
+  # ----------------------------------------------------------------------------
+  # AWS CLI installation (optional multi-cloud tooling)
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./awscli.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # Azure CLI
+  # ----------------------------------------------------------------------------
+  # Azure CLI installation (optional multi-cloud tooling)
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./azcli.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # Google Cloud CLI
+  # ----------------------------------------------------------------------------
+  # Google Cloud CLI installation (gcloud)
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./gcloudcli.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # Docker
+  # ----------------------------------------------------------------------------
+  # Docker Engine installation/configuration
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./docker.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # Postman
+  # ----------------------------------------------------------------------------
+  # Postman installation
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./postman.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # KRDC
+  # ----------------------------------------------------------------------------
+  # KRDC (KDE Remote Desktop Client) installation
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./krdc.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # OnlyOffice
+  # ----------------------------------------------------------------------------
+  # OnlyOffice installation
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./onlyoffice.sh"
     execute_command = "sudo -E bash '{{.Path}}'"
   }
 
-  # Desktop icons
+  # ----------------------------------------------------------------------------
+  # Desktop defaults and trusted launcher icons (/etc/skel)
+  # ----------------------------------------------------------------------------
   provisioner "shell" {
     script          = "./desktop.sh"
     execute_command = "sudo -E bash '{{.Path}}'"

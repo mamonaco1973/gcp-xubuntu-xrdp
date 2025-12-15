@@ -79,20 +79,22 @@ resource "google_compute_firewall" "allow_smb" {
 
 
 # ================================================================================================
-# Ubuntu VM: NFS Gateway + AD Join Client
+# Xubuntu VM: NFS Gateway + AD-Joined Desktop Client
 # ================================================================================================
-# Deploys an Ubuntu 24.04 VM that:
+# Deploys a Xubuntu 24.04 VM that:
 #   - Connects to the "ad-vpc" network and "ad-subnet".
-#   - Runs a startup script to join the AD domain and mount NFS from Filestore.
+#   - Boots from a custom Packer-built Xubuntu image.
+#   - Runs a startup script to join the Active Directory domain and mount NFS
+#     storage from Filestore for user home directories.
 #   - Uses OS Login for secure SSH access.
 #
 # Key Points:
-#   - Ephemeral public IP assigned for SSH.
-#   - Startup script injects domain FQDN and Filestore IP.
-#   - Service account grants API access.
+#   - Startup script injects AD domain FQDN and Filestore IP at boot.
+#   - Service account grants required GCP API access.
 # ================================================================================================
-resource "google_compute_instance" "nfs_gateway_instance" {
-  name         = "nfs-gateway-${random_string.vm_suffix.result}"
+
+resource "google_compute_instance" "desktop_instance" {
+  name         = "xubuntu-${random_string.vm_suffix.result}"
   machine_type = "e2-standard-2" 
   zone         = "us-central1-a"
 
@@ -101,7 +103,7 @@ resource "google_compute_instance" "nfs_gateway_instance" {
   # ----------------------------------------------------------------------------------------------
   boot_disk {
     initialize_params {
-      image = data.google_compute_image.ubuntu_latest.self_link
+      image = data.google_compute_image.xubuntu_packer_image.self_link
     }
   }
 

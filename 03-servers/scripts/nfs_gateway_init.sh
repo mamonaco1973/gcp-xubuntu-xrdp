@@ -24,20 +24,6 @@ fi
 apt-get update -y >> /root/userdata.log 2>&1   # Refresh package lists for latest versions
 export DEBIAN_FRONTEND=noninteractive          # Prevent interactive prompts during installs
 
-# Install packages for AD integration, NFS, and Samba:
-# - realmd / sssd-* / adcli: Enable AD discovery/join and user authentication
-# - libnss-sss / libpam-sss: NSS/PAM integration for SSSD
-# - samba-* / winbind: Samba and Winbind for AD + SMB integration
-# - oddjob / oddjob-mkhomedir: Auto-create home dirs on first login
-# - krb5-user: Kerberos tools for authentication
-# - nfs-common: NFS client utilities
-# - stunnel4: TLS tunneling (optional, for secure services)
-# - Editors (nano/vim) + utilities (less/unzip)
-apt-get install -y less unzip realmd sssd-ad sssd-tools libnss-sss \
-    libpam-sss adcli samba samba-common-bin samba-libs oddjob \
-    oddjob-mkhomedir packagekit krb5-user nano vim nfs-common \
-    winbind libpam-winbind libnss-winbind stunnel4 >> /root/userdata.log 2>&1
-
 # ---------------------------------------------------------------------------------
 # Section 2: Mount NFS file system
 # ---------------------------------------------------------------------------------
@@ -228,9 +214,21 @@ chmod 700 /home/*
 
 # Clone helper repo into /nfs and apply group permissions
 cd /nfs
-git clone https://github.com/mamonaco1973/gcp-filestore.git
-chmod -R 775 gcp-filestore
-chgrp -R mcloud-users gcp-filestore
+git clone https://github.com/mamonaco1973/gcp-xubuntu-xrdp.git
+chmod -R 775 gcp-xubuntu-xrdp
+chgrp -R mcloud-users gcp-xubuntu-xrdp
+
+git clone https://github.com/mamonaco1973/aws-setup.git
+chmod -R 775 aws-setup
+chgrp -R mcloud-users aws-setup
+
+git clone https://github.com/mamonaco1973/azure-setup.git
+chmod -R 775 azure-setup
+chgrp -R mcloud-users azure-setup
+
+git clone https://github.com/mamonaco1973/gcp-setup.git
+chmod -R 775 gcp-setup
+chgrp -R mcloud-users gcp-setup
 
 uptime >> /root/userdata.log 2>&1
 touch "$FLAG_FILE"
