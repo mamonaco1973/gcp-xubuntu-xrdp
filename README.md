@@ -1,77 +1,63 @@
-# GCP Mini Active Directory with Filestore: SMB & NFS File Sharing
+# Google Cloud Xubuntu XRDP Cloud Development Environment
 
-This project extends the original **GCP Mini Active Directory** lab by integrating **Filestore** as a managed shared storage backend. Instead of relying only on local disks or standalone file servers, this solution demonstrates how to expose Filestore storage in two ways:  
+This project provides a **complete cloud-based Linux desktop development environment**
+powered by **Xubuntu + XRDP**, **Mini-Active Directory**, and **Google Filestore (NFS)**
+on the **Google Cloud Platform (GCP)**.
 
-1. **Direct NFS Mounts on Linux Clients** – Linux machines joined to the mini-AD domain mount Filestore via the NFS 3.0 or 4.1 protocol for scalable, POSIX-compliant storage.  
-2. **SMB Access via NFS Gateway** – Windows machines joined to the mini-AD domain connect to a Samba-based NFS gateway, which translates NFS exports from Filestore into SMB shares, enabling Active Directory authentication and group-based access.  
+It is designed as a **universal dev workstation** that contains the full superset of
+tools, dependencies, and configurations used across all build projects on my channel.
 
-The mini-AD environment (Samba 4 on Ubuntu) provides Active Directory authentication and DNS services. Filestore provides fully managed NFS storage tiers with flexible performance and capacity options. Together, they enable a hybrid setup where both Linux and Windows domain-joined clients can consume GCP-native storage seamlessly.  
+![xrdp](xrdp.png)
 
-![GCP diagram](gcp-filestore.png)
+Instead of manually configuring a workstation for each tutorial, demo, or cloud
+project, this solution automatically provisions:
 
-## ☁️ Filestore Service Tiers Overview
+1. **A Custom Xubuntu XRDP GCP Image (Packer)**
+   - Preloaded with Chrome, Firefox (deb), VS Code, Docker, KRDC, Postman
+   - Includes all development tooling used across channel projects:
+     **Packer, Terraform, Docker CLI, Azure CLI, AWS CLI v2, Google Cloud CLI**
+   - Snap-free, clean, lightweight Xfce desktop
+   - XRDP fully configured with all fixes, enhancements, and defaults
+   - Desktop/panel icons, terminal emulator defaults, and `/etc/skel` customizations
 
-**Filestore** is Google Cloud’s managed **NFS** (Network Attached Storage): a shared file system exposed over NFS to your VMs and GKE clusters without you needing to run a fileserver yourself. You are billed for **provisioned capacity** (not used bytes), can scale capacity, and choose tiers based on your needs for cost, performance, and availability.
+2. **A Mini Active Directory Domain (Terraform)**
+   - Samba-based AD Domain Controller running on GCP Compute Engine
+   - Domain users generated from a template with friendly passwords
+   - Central authentication for Linux and Windows clients
 
----
+3. **Domain-Joined Xubuntu XRDP VM (Terraform)**
+   - Deploys the Xubuntu XRDP instance using the Packer-built GCP custom image
+   - Automatically joins the Mini-AD domain during boot
+   - Ensures consistent user profiles and default settings through `/etc/skel`
 
-### ⚙️ Capacity Ranges (Min → Max)
+4. **Google Filestore (NFS) for Persistent Home Directories**
+   - Linux instances mount Filestore via NFS
+   - Provides centralized, persistent, scalable home directories
+   - Ideal for multi-VM desktop pools or GCP-based demo environments
 
-| Tier | Minimum Size | Maximum Size | Scaling Increments | Location Type |
-| :--- | :--- | :--- | :--- | :--- |
-| **Basic HDD** | **1 TiB** | **63.9 TiB** | 1 GiB (Up only) | Zonal |
-| **Basic SSD** | **2.5 TiB** | **63.9 TiB** | 1 GiB (Up only) | Zonal |
-| **Zonal** | **1 TiB** | **100 TiB** | 256 GiB or 2.5 TiB | Zonal |
-| **Regional** | **1 TiB** | **100 TiB** | 256 GiB or 2.5 TiB | Regional |
-| **Enterprise** | **1 TiB** | **10 TiB** (per instance) | 256 GiB (Up or down) | Regional |
-| *Enterprise Multishare* | 1 TiB | Up to 80 shares (up to **320 TiB** total capacity) | 256 GiB | Regional |
+The result is a **disposable, reproducible, cloud-hosted Linux workstation** that
+can be used for **any build, automation, or cloud project**
+featured on the channel.
 
----
+![GCP diagram](gcp-xubuntu.png)
 
-### 🔒 NFS Protocol Support
-
-| Tier | NFSv3 | NFSv4.1 | Key Differentiator |
-| :--- | :--- | :--- | :--- |
-| **Basic HDD/SSD** | ✅ Yes | ❌ No | Simplicity, compatibility (NFSv3 only) |
-| **Zonal** | ✅ Yes | ✅ Yes | Highest Zonal performance and NFSv4.1 features. |
-| **Regional** | ✅ Yes | ✅ Yes | Regional redundancy (high availability) with NFSv4.1 features. |
-| **Enterprise** | ✅ Yes | ✅ Yes | Highest availability (**multi-zone redundancy**) for mission-critical apps and NFSv4.1 features. |
-
----
-
-### 💰 Minimal Deploy Size: Cost Comparison (Illustrative)
-
-> These are illustrative monthly costs based on the minimum instance size and *approximate* public pricing for a typical US region (e.g., `us-central1`). **Actual costs vary by region.**
-
-| Tier | Availability | **Minimum capacity** | **Approx $/GiB-month** | **Est. monthly @ min size** |
-| :--- | :--- | :---: | :---: | :---: |
-| **Basic HDD** | Zonal | **1 TiB** | ~**$0.20** | ~**$204.80** |
-| **Basic SSD** | Zonal | **2.5 TiB** | ~$0.30 | ~$768.00 |
-| **Zonal** (Default perf) | Zonal | **1 TiB** | ~**$0.28** | ~**$286.72** |
-| **Regional** (Default perf) | Regional | **1 TiB** | ~$0.45 | ~$460.80 |
-| **Enterprise** | Regional | **1 TiB** | ~$0.45 | ~$460.80 |
-
-#### Key Cost Notes:
-
-* **Custom Performance (Zonal/Regional):** Selecting **Custom Performance** lowers the $/GiB-month charge but introduces two new hourly fees: a **per-instance hourly charge** and a **per-IOPS hourly charge**. The total cost will depend on the custom IOPS you provision.
-* **Basic Tiers:** The Basic tiers (HDD/SSD) often have a **per-GiB rate AND an hourly instance fee**, which is factored into the approximate blended $/GiB-month rate shown above.
-* **NFSv4.1:** To utilize features like **Kerberos/Active Directory integration** and stronger security, you must select **Zonal, Regional, or Enterprise**. Basic tiers are **NFSv3-only**.
 
 ## Prerequisites
 
 * [A Google Cloud Account](https://console.cloud.google.com/)
 * [Install gcloud CLI](https://cloud.google.com/sdk/docs/install) 
-* [Install Latest Terraform](https://developer.hashicorp.com/terraform/install)
+* [Install Terraform](https://developer.hashicorp.com/terraform/install)
+* [Install Packer](https://developer.hashicorp.com/packer/install)
 
-If this is your first time watching our content, we recommend starting with this video: [GCP + Terraform: Easy Setup](https://youtu.be/3spJpYX4f7I). It provides a step-by-step guide to properly configure Terraform, Packer, and the gcloud CLI.
+If this is your first time watching our content, we recommend starting with this video: [GCP + Terraform: Easy Setup](https://www.youtube.com/watch?v=6Pe_YkUeHEU). It provides a step-by-step guide to properly configure Terraform, Packer, and the gcloud CLI.
 
 ## Download this Repository  
 
 Clone the repository from GitHub and move into the project directory:  
 
 ```bash
-git clone https://github.com/mamonaco1973/gcp-filestore.git
-cd gcp-filestore
+git clone https://github.com/mamonaco1973/gcp-xubuntu-xrdp.git
+cd gcp-xubuntu-xrdp
 ```  
 
 ---
@@ -81,10 +67,11 @@ cd gcp-filestore
 Run [check_env](check_env.sh) to validate your environment, then run [apply](apply.sh) to provision the infrastructure.  
 
 ```bash
-develop-vm:~/gcp-file-store$ ./apply.sh
+develop-vm:~/gcp-xubuntu-xrdp$ ./apply.sh
 NOTE: Validating that required commands are in PATH.
 NOTE: gcloud is found in the current PATH.
 NOTE: terraform is found in the current PATH.
+NOTE: packer is found in the current PATH.
 NOTE: All required commands are available.
 NOTE: Checking Google Cloud CLI connection.
 NOTE: Successfully authenticated with GCP.
@@ -96,34 +83,44 @@ Terraform has been successfully initialized!
 When the deployment completes, the following resources are created:
 
 - **Networking**
-  - A **custom-mode VPC** with dedicated subnets for the domain controller, the NFS gateway, and client VMs
-  - **Firewall rules** for required AD/DC ports (e.g., 53 DNS, 88 Kerberos, 123 NTP, 135/445 RPC/SMB, dynamic RPC range) and **NFS (2049)** from trusted subnets to Filestore / gateway
-  - Internal DNS resolution provided by the Samba DC (with forwarders as configured)
+  - A **custom-mode VPC** with dedicated subnets for the Mini-AD domain controller,
+    Filestore, and Xubuntu XRDP client VMs
+  - **Firewall rules** allowing required AD/DC traffic (DNS 53, Kerberos 88,
+    NTP 123, LDAP/SMB/RPC, dynamic RPC range) and **NFS (2049)** access to Filestore
+    from trusted subnets
+  - Internal DNS resolution provided by the **Samba AD DC**, with upstream
+    forwarders configured as needed
 
 - **Security & Identity**
-  - **Secret Manager** entries for administrator and user credentials
-  - **Service accounts** and IAM bindings (least-privilege) for Compute Engine and Filestore access
-  - Required **Google APIs enabled** (Compute, Filestore, Secret Manager, etc.)
+  - **Secret Manager** entries for domain administrator and seeded user credentials
+  - **Service accounts** and least-privilege IAM bindings for Compute Engine
+  - Required **Google Cloud APIs enabled** (Compute Engine, Filestore,
+    Secret Manager, Cloud DNS, etc.)
 
 - **Active Directory Server**
-  - An **Ubuntu** Compute Engine VM running **Samba 4** as Domain Controller and DNS
-  - Configured **Kerberos realm** and **NetBIOS** name
-  - Administrator credentials stored in **Secret Manager**
-  - **User/group bootstrap** via Terraform template: `01-directory/scripts/users.json.template`
+  - An **Ubuntu** Compute Engine VM running **Samba 4** as an Active Directory
+    Domain Controller and DNS server
+  - Configured **Kerberos realm** and **NetBIOS** domain name
+  - Administrator credentials securely stored in **Secret Manager**
+  - **User and group bootstrap** driven by Terraform using:
+    `01-directory/scripts/users.json.template`
 
-- **Shared Storage (Filestore)**
-  - A **Filestore instance** with an exported share (e.g., `filestore`)
-  - Mount target reachable from the NFS gateway and (optionally) Linux clients
-  - Mounted on the gateway (e.g., `/nfs`) with POSIX ownership/permissions applied by init scripts
+- **Shared Storage (Google Filestore)**
+  - A **Filestore instance** exporting an NFS share for user home directories
+  - NFS endpoint reachable from domain-joined Linux clients
+  - Mounted on Xubuntu XRDP instances (e.g., `/home`) with consistent POSIX
+    ownership and permissions
 
-- **Client & Gateway Instances**
-  - **NFS Gateway (Linux):** Ubuntu VM **joined to the domain**, mounts Filestore, and **re-exports as SMB** via Samba for Windows clients  
-    - Bootstrapped by: `02-servers/scripts/nfs_gateway_init.sh`
-  - **Windows Client:** Windows Server VM **auto-joined to the domain** at first boot  
-    - Bootstrapped by: `02-servers/scripts/ad_join.ps1`
-  - Both paths authenticate against the **mini-AD** domain (Linux via NSS/SSSD + Kerberos, Windows via native AD)
+- **Xubuntu XRDP Client**
+  - A **custom-image Xubuntu VM** built with Packer and deployed via Terraform
+  - **Automatically joined to the Mini-AD domain** at first boot
+  - XRDP fully configured for domain authentication and multi-user access
+  - User home directories backed by **Filestore NFS**, ensuring persistence
+    across VM rebuilds
 
-
+The result is a **fully domain-integrated, persistent, cloud-hosted Linux desktop**
+environment on GCP, suitable for repeatable demos, development workflows,
+and multi-user XRDP access.
 
 ## Users and Groups
 
@@ -155,44 +152,75 @@ As part of this project a set of **users** and **groups** are automatically crea
 The **`uidNumber`** (User ID) and **`gidNumber`** (Group ID) attributes are critical when integrating **Active Directory** with **Linux systems**, particularly in environments where **SSSD** ([System Security Services Daemon](https://sssd.io/)) or similar services are used for identity management. These attributes allow Linux hosts to recognize and map Active Directory users and groups into the **POSIX** (Portable Operating System Interface) user and group model.
 
 
-### Log into Windows Instance  
+### Creating a New Desktop User
 
-After the Windows instance boots, the [startup script](02-servers/scripts/ad_join.ps1) executes which does the following tasks   
+Follow these steps to provision a new user in the Active Directory domain and validate their access to the Desktop.
 
-- Install Active Directory Administrative Tools   
-- Join EC2 Instance to Active Directory  
-- Grant RDP Access  
-- Final System Reboot  
+1. **Connect to the Domain Controller**  
+   - Log into the **`windows-ad-admin`** server via Remote Desktop (RDP).  
+   - Use the `rpatel` or `jsmith` credentials that were provisioned during cluster deployment.  
 
-Administrator credentials are stored in the `admin_ad_credentials` secret.
+2. **Launch Active Directory Users and Computers (ADUC)**  
+   - From the Windows Start menu, open **“Active Directory Users and Computers.”**  
+   - Enable **Advanced Features** under the **View** menu. This ensures you can access the extended attribute tabs (e.g., UID/GID mappings).  
 
-![Windows VM Instance](windows.png)
+3. **Navigate to the Users Organizational Unit (OU)**  
+   - In the left-hand tree, expand the domain (e.g., `mcloud.mikecloud.com`).  
+   - Select the **Users** OU where all cluster accounts are managed.  
 
-### Log into Linux Instance  
+4. **Create a New User Object**  
+   - Right-click the Users OU and choose **New → User.**  
+   - Provide the following:  
+     - **Full Name:** Descriptive user name (e.g., “Mike Cloud”).  
+     - **User Logon Name (User Principal Name / UPN):** e.g., `mcloud@mcloud.mikecloud.com`.  
+     - **Initial Password:** Set an initial password.
 
-When the Linux instance boots, the [startup script](02-servers/scripts/nfs_gateway.sh) runs the following tasks:  
+![Windows](windows.png)
 
-- Update OS and install required packages  
-- Join the Active Directory domain with SSSD  
-- Enable password authentication for AD users  
-- Configure SSSD for AD integration  
-- Grant sudo privileges to the `linux-admins` group  
-- Configure instance as a Samba file gateway to NFS
+5. **Assign a Unique UID Number**  
+   - Open **PowerShell** on the AD server.  
+   - Run the script located at:  
+     ```powershell
+     Z:\azure-xubuntu-xrdp\04-utils\getNextUID.bat
+     ```  
+   - This script returns the next available **`uidNumber`** to assign to the new account.  
 
-Linux user credentials are stored as secrets.
+6. **Configure Advanced Attributes**  
+   - In the new user’s **Properties** dialog, open the **Attribute Editor** tab.  
+   - Set the following values:  
+     - `gidNumber` → **10001** (the shared GID for the `mcloud-users` group).  
+     - `uid` → match the user’s AD login ID (e.g., `rpatel`).  
+     - `uidNumber` → the unique numeric value returned from `getNextUID.ps1`.  
 
-![Linux VM Instance](linux.png) 
+7. **Add Group Memberships**  
+   - Go to the **Member Of** tab.  
+   - Add the user to the following groups:  
+     - **mcloud-users** → grants standard Desktop access.  
+     - **us** (or other geographic/departmental group as applicable).  
 
-## Clean Up  
+8. **Validate User on Linux**  
+   - Open an **AWS Systems Manager (SSM)** session to the **`xubuntu-instance`** instance.  
+   - Run the following command to confirm the user’s identity mapping:  
+     ```bash
+     id mcloud
+     ```  
+   - Verify that the output shows the correct **UID**, **GID**, and group memberships (e.g., `mcloud-users`).  
 
-When finished, remove all resources with:  
+![Linux](linux.png)
+
+9. **Validate Desktop Access**  
+   - Open the a RDP session to the desktop environment
+   - Log in with the new AD credentials.  
+
+![mcloud](xrdp-mcloud.png)
+
+### Clean Up Infrastructure  
+
+When you are finished testing, you can remove all provisioned resources with:  
 
 ```bash
 ./destroy.sh
-```  
+```
 
 This uses Terraform to delete the VPC, Compute Engine instances, firewall rules, Secret Manager entries, and any other resources created by this project.  
 
----
-
-⚠️ **Reminder:** This project is for **labs and development only**. Do not use it in production.  
