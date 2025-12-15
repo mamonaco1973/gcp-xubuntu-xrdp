@@ -13,7 +13,6 @@ set -euo pipefail
 # ------------------------------------------------------------------------------------------
 
 export DEBIAN_FRONTEND=noninteractive
-sudo systemctl stop snapd.service snapd.socket snapd.seeded.service || true
 sudo snap remove --purge google-cloud-cli
 sudo snap remove --purge core22 || true
 sudo snap remove --purge snapd || true
