@@ -13,11 +13,17 @@ set -euo pipefail
 # ------------------------------------------------------------------------------------------
 
 export DEBIAN_FRONTEND=noninteractive
-sudo snap remove --purge core22
-sudo snap remove --purge snapd
+sudo systemctl stop snapd.service snapd.socket snapd.seeded.service || true
+sudo snap remove --purge google-cloud-cli
+sudo snap remove --purge core22 || true
+sudo snap remove --purge snapd || true
 sudo apt-get purge -y snapd
+sudo apt-get autoremove -y --purge
+sudo rm -rf /var/cache/snapd /var/lib/snapd ~/snap
+
 echo -e "Package: snapd\nPin: release *\nPin-Priority: -10" \
- | sudo tee /etc/apt/preferences.d/nosnap.pref
+  | sudo tee /etc/apt/preferences.d/nosnap.pref >/dev/null
+
 sudo apt-get update -y
 
 # ------------------------------------------------------------------------------------------
