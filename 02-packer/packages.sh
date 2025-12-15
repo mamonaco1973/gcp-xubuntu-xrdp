@@ -13,6 +13,12 @@ set -euo pipefail
 # ------------------------------------------------------------------------------------------
 
 export DEBIAN_FRONTEND=noninteractive
+
+echo "NOTE: Waiting for snap seeding to finish..."
+while snap changes | grep -qE 'Doing|Wait'; do
+  sleep 5
+done
+
 sudo snap remove --purge google-cloud-cli
 sudo snap remove --purge core22 || true
 sudo snap remove --purge snapd || true
