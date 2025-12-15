@@ -25,6 +25,20 @@ fi
 # Return to the previous (parent) directory.
 cd ..
 
+
+project_id=$(jq -r '.project_id' "./credentials.json")
+
+gcloud auth activate-service-account --key-file="./credentials.json" > /dev/null 2> /dev/null
+export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/credentials.json"
+
+cd 02-packer
+packer init .
+packer build \
+  -var="project_id=$project_id" \
+  xubuntu_image.pkr.hcl
+cd ..
+
+
 # Phase 3 of the build - Build VMs connected to active directory
 cd 03-servers
 

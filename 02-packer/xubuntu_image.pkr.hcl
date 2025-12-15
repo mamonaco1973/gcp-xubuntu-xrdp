@@ -8,90 +8,51 @@
 #   - Produces a timestamped image for VM or VMSS deployments
 # ==============================================================================
 
-# ------------------------------------------------------------------------------
-# Packer Plugin Configuration
-# - Loads the Azure plugin used for building managed images
-# ------------------------------------------------------------------------------
 packer {
   required_plugins {
-    azure = {
-      source  = "github.com/hashicorp/azure"
-      version = "~> 2"
+    googlecompute = {
+      source  = "github.com/hashicorp/googlecompute"
+      version = "~> 1.1.6"
     }
   }
 }
 
-# ------------------------------------------------------------------------------
-# Locals: Timestamp Utility
-# - Generates compact timestamp for image naming
-# ------------------------------------------------------------------------------
+############################################
+# LOCALS: TIMESTAMP UTILITY
+############################################
+
 locals {
-  timestamp = regex_replace(timestamp(), "[- TZ:]", "")
+  timestamp = regex_replace(timestamp(), "[- TZ:]", "") # Generate compact timestamp (YYYYMMDDHHMMSS)
+                                                       # Used for unique image names
 }
 
-# ------------------------------------------------------------------------------
-# Required Variables: Azure Credentials and Settings
-# - Passed securely via env vars or CLI
-# ------------------------------------------------------------------------------
-variable "client_id" {
-  description = "Azure Client ID"
+variable "project_id" {
+  description = "GCP Project ID"
   type        = string
 }
 
-variable "client_secret" {
-  description = "Azure Client Secret"
+variable "zone" {
+  description = "GCP Zone"
   type        = string
+  default     = "us-central1-a"
 }
 
-variable "subscription_id" {
-  description = "Azure Subscription ID"
+variable "source_image_family" {
+  description = "Source image family to base the build on (e.g., ubuntu-2404-lts-amd64)"
   type        = string
+  default     = "ubuntu-2404-lts-amd64"
 }
 
-variable "tenant_id" {
-  description = "Azure Tenant ID"
-  type        = string
-}
+source "googlecompute" "xubuntu_image" {
+  project_id            = var.project_id
+  zone                  = var.zone
+  source_image_family   = var.source_image_family # Specifies the base image family
+  ssh_username          = "ubuntu"                # Specify the SSH username
+  machine_type          = "e2-standard-2"         # Machine type for the build VM
 
-variable "resource_group" {
-  description = "Resource group for the image"
-  type        = string
-}
-
-variable "location" {
-  description = "Azure region to build in"
-  type        = string
-  default     = "Central US"
-}
-
-variable "vm_size" {
-  description = "Builder VM size"
-  type        = string
-  default     = "Standard_D4s_v3"
-}
-
-# ------------------------------------------------------------------------------
-# Source Block: Azure Image Builder
-# - Defines base Ubuntu image and build parameters
-# ------------------------------------------------------------------------------
-source "azure-arm" "xubuntu_image" {
-  client_id       = var.client_id
-  client_secret   = var.client_secret
-  subscription_id = var.subscription_id
-  tenant_id       = var.tenant_id
-
-  image_publisher = "Canonical"
-  image_offer     = "ubuntu-24_04-lts"
-  image_sku       = "server"
-  image_version   = "latest"
-
-  location        = var.location
-  vm_size         = var.vm_size
-  os_type         = "Linux"
-  ssh_username    = "ubuntu"
-
-  managed_image_name = "xubuntu_image_${local.timestamp}"
-  managed_image_resource_group_name = var.resource_group
+  image_name            = "xubuntu-image-${local.timestamp}" # Use local.timestamp directly
+  image_family          = "xubuntu-images"          # Image family to group related images
+  disk_size             = 64                        # Disk size in GB
 }
 
 # ------------------------------------------------------------------------------
@@ -99,7 +60,7 @@ source "azure-arm" "xubuntu_image" {
 # - Executes each setup script inside the build VM
 # ------------------------------------------------------------------------------
 build {
-  sources = ["source.azure-arm.xubuntu_image"]
+  sources = ["source.googlecompute.xubuntu_image"]
 
   # Base packages
   provisioner "shell" {

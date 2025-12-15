@@ -38,18 +38,3 @@ apt-get install -y less unzip realmd sssd-ad sssd-tools libnss-sss \
     oddjob-mkhomedir packagekit krb5-user nano vim nfs-common \
     winbind libpam-winbind libnss-winbind stunnel4 jq
 
-# ---------------------------------------------------------------------------------
-# Install AZ NFS Helper
-# ---------------------------------------------------------------------------------
-
-curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor --yes \
-  -o /etc/apt/keyrings/microsoft.gpg
-
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] \
-https://packages.microsoft.com/ubuntu/22.04/prod jammy main" \
-  | sudo tee /etc/apt/sources.list.d/aznfs.list
-
-echo "aznfs aznfs/enable_autoupdate boolean true" | sudo debconf-set-selections
-
-apt-get update -y
-apt-get install -y aznfs  
