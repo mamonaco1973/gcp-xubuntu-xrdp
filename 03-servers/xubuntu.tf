@@ -21,7 +21,7 @@
 # Generates a 6-character lowercase suffix to ensure resource name uniqueness.
 # ================================================================================================
 resource "random_string" "vm_suffix" {
-  length  = 6     # Number of characters in the generated string
+  length  = 10    # Number of characters in the generated string
   special = false # Excludes special characters (DNS-friendly)
   upper   = false # Lowercase only for consistency
 }
