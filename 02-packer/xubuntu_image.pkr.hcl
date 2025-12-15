@@ -56,7 +56,7 @@ source "googlecompute" "xubuntu_image" {
   zone                = var.zone
   source_image_family = var.source_image_family         # Base Ubuntu 24.04 LTS image family
   ssh_username        = "ubuntu"                        # Default Ubuntu user on GCE images
-  machine_type        = "e2-standard-2"                 # Temporary build VM machine type
+  machine_type        = "n2-standard-4"                 # Temporary build VM machine type
 
   image_name   = "xubuntu-image-${local.timestamp}"     # Unique image name per build
   image_family = "xubuntu-images"                       # Image family for versioned builds
