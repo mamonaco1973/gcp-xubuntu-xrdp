@@ -2,6 +2,8 @@
 # Install Active Directory Components
 # ------------------------------------------------------------
 
+exit 0
+
 # Suppress progress bars to speed up execution
 $ProgressPreference = 'SilentlyContinue'
 
@@ -15,7 +17,7 @@ Install-WindowsFeature -Name GPMC,RSAT-AD-PowerShell,RSAT-AD-AdminCenter,RSAT-AD
 $secretJson = gcloud secrets versions access latest --secret="admin-ad-credentials"
 $secretObject = $secretJson | ConvertFrom-Json
 $password = $secretObject.password | ConvertTo-SecureString -AsPlainText -Force
-$username = $secretObject.username
+$username = "Admin"
 $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $username, $password
 
 Add-Computer -DomainName "${domain_fqdn}" -Credential $cred -Force -ErrorAction Stop
