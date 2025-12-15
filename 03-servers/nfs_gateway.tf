@@ -146,7 +146,7 @@ resource "google_compute_instance" "desktop_instance" {
   # Firewall Tags
   # ----------------------------------------------------------------------------------------------
   # Applies both SSH and NFS firewall rules
-  tags = ["allow-ssh", "allow-nfs", "allow-smb"]
+  tags = ["allow-ssh", "allow-nfs", "allow-smb","allow-rdp"]
 }
 
 
