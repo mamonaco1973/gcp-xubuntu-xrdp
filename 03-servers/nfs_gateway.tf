@@ -95,7 +95,7 @@ resource "google_compute_firewall" "allow_smb" {
 
 resource "google_compute_instance" "desktop_instance" {
   name         = "xubuntu-${random_string.vm_suffix.result}"
-  machine_type = "e2-standard-2" 
+  machine_type = "e2-standard-4" 
   zone         = "us-central1-a"
 
   # ----------------------------------------------------------------------------------------------
