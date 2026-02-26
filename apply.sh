@@ -10,8 +10,8 @@
 #       04) Validate:  run post-build checks
 #
 # Assumptions:
-#   - ./credentials.json exists in the repo root (service account key)
-#   - check_env.sh validates required tools and environment pre-reqs
+#   - ./credentials.json exists in the repo root.
+#   - check_env.sh validates required tools and prerequisites.
 # ==============================================================================
 
 set -e
@@ -51,11 +51,11 @@ cd ..
 # Phase 2: Build GCP Xubuntu Image (Packer)
 # ------------------------------------------------------------------------------
 
-# Extract the GCP project_id from the service account key.
+# Extract GCP project_id from the service account key.
 project_id=$(jq -r '.project_id' "./credentials.json")
 
-# Authenticate gcloud using the local service account key.
-# Also export GOOGLE_APPLICATION_CREDENTIALS for tools that use ADC.
+# Authenticate gcloud using service account key.
+# Export GOOGLE_APPLICATION_CREDENTIALS for ADC-based tools.
 gcloud auth activate-service-account --key-file="./credentials.json" > /dev/null 2> /dev/null
 export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/credentials.json"
 
@@ -74,25 +74,25 @@ cd ..
 # Phase 3: Server Deployment (Terraform)
 # ------------------------------------------------------------------------------
 
-# Determine Latest Xubuntu Image
+# Determine latest Xubuntu image in family.
 
 xubuntu_image=$(gcloud compute images list \
   --filter="name~'^xubuntu-image' AND family=xubuntu-images" \
   --sort-by="~creationTimestamp" \
   --limit=1 \
-  --format="value(name)")  # Grabs most recently created image from 'xubuntu-images' family
+  --format="value(name)")  # Most recently created image in family
 
 if [[ -z "$xubuntu_image" ]]; then
-  echo "ERROR: No latest image found for 'xubuntu-image' in family 'xubuntu-images'."
-  exit 1  # Hard fail if no image found — we can't safely destroy without this input
+  echo "ERROR: No latest image found for 'xubuntu-image' in family."
+  exit 1
 fi
 
 echo "NOTE: Xubuntu image is $xubuntu_image"
 
-# Build VMs that connect to / join the directory.
+# Build VMs that connect to or join the directory.
 cd 03-servers
 
-# Initialize Terraform (providers, backend, etc.).
+# Initialize Terraform.
 terraform init
 
 # Apply the configuration (no prompt).

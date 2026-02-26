@@ -45,3 +45,24 @@ variable "user_base_dn" {
   default     = "CN=Users,DC=mcloud,DC=mikecloud,DC=com"
 }
 
+# ==============================================================================
+# VPC Name for Mini AD Instance
+# ------------------------------------------------------------------------------
+# Name of the VPC network where the AD instance will reside.
+# ==============================================================================
+variable "vpc" {
+  description = "Network for mini AD instance (e.g., ad-vpc)"
+  type        = string
+  default     = "xubuntu-vpc"
+}
+
+# ==============================================================================
+# Subnet Name for Mini AD Instance
+# ------------------------------------------------------------------------------
+# Name of the subnet within the VPC used for AD placement.
+# ==============================================================================
+variable "subnet" {
+  description = "Sub-network for mini AD instance (e.g., ad-subnet)"
+  type        = string
+  default     = "xubuntu-subnet"
+}

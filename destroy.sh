@@ -4,17 +4,17 @@
 # ------------------------------------------------------------------------------
 # Purpose:
 #   - Tear down the GCP Xubuntu environment:
-#       01) Destroy servers (Terraform) using the latest Xubuntu image name
-#       02) Delete all Xubuntu images from the project (best-effort)
+#       01) Destroy servers (Terraform)
+#       02) Delete Xubuntu images (best-effort)
 #       03) Destroy directory services (Terraform)
 #
 # Notes:
-#   - Uses the most recently created image in family 'xubuntu-images' whose name
-#     matches '^xubuntu-image' as an input to 03-servers Terraform destroy.
-#   - Image deletion is best-effort and continues on failures.
+#   - Uses most recent image in family 'xubuntu-images'
+#     matching '^xubuntu-image' as destroy input.
+#   - Image deletion continues even if individual deletes fail.
 # ==============================================================================
 
-#!/bin/bash
+set -e
 
 # ------------------------------------------------------------------------------
 # Determine Latest Xubuntu Image
@@ -24,11 +24,11 @@ xubuntu_image=$(gcloud compute images list \
   --filter="name~'^xubuntu-image' AND family=xubuntu-images" \
   --sort-by="~creationTimestamp" \
   --limit=1 \
-  --format="value(name)")  # Grabs most recently created image from 'xubuntu-images' family
+  --format="value(name)")  # Most recent image in family
 
 if [[ -z "$xubuntu_image" ]]; then
-  echo "ERROR: No latest image found for 'xubuntu-image' in family 'xubuntu-images'."
-  exit 1  # Hard fail if no image found — we can't safely destroy without this input
+  echo "ERROR: No latest image found for family 'xubuntu-images'."
+  exit 1
 fi
 
 echo "NOTE: Xubuntu image is $xubuntu_image"
@@ -52,16 +52,16 @@ cd ..
 
 image_list=$(gcloud compute images list \
   --format="value(name)" \
-  --filter="name~'^(xubuntu)'")     # Regex match for names starting with 'xubuntu'
+  --filter="name~'^(xubuntu)'")  # Names starting with 'xubuntu'
 
-# Check if any were found
-if [ -z "$image_list" ]; then
+if [[ -z "$image_list" ]]; then
   echo "NOTE: No images found starting with 'xubuntu'. Continuing..."
 else
   echo "NOTE: Deleting images..."
   for image in $image_list; do
     echo "NOTE: Deleting image: $image"
-    gcloud compute images delete "$image" --quiet || echo "WARNING: Failed to delete image: $image"  # Continue even if deletion fails
+    gcloud compute images delete "$image" --quiet \
+      || echo "WARNING: Failed to delete image: $image"
   done
 fi
 

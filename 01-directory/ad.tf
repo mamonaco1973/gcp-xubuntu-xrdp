@@ -1,11 +1,11 @@
-# ==========================================================================================
+# ==============================================================================
 # Mini Active Directory (mini-ad) Module Invocation
-# ------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Purpose:
-#   - Calls the reusable "mini-ad" module to provision an Ubuntu-based AD Domain Controller
-#   - Passes in networking, DNS, and authentication parameters
-#   - Supplies user account definitions via a JSON blob generated from a template
-# ==========================================================================================
+#   - Calls the reusable "mini-ad" module to provision an Ubuntu AD DC.
+#   - Passes networking, DNS, and authentication parameters.
+#   - Supplies user definitions via a rendered JSON template blob.
+# ==============================================================================
 
 module "mini_ad" {
   source            = "github.com/mamonaco1973/module-gcp-mini-ad" # Path to the mini-ad Terraform module
@@ -20,20 +20,20 @@ module "mini_ad" {
   email             = local.service_account_email                  # Service account email
   machine_type      = var.machine_type                             # Machine type for AD VM
 
-  # Ensure NAT + route association exist before bootstrapping (for package repos, etc.)
+  # Ensure NAT and routes exist before bootstrap (package repos, etc.).
   depends_on = [google_compute_subnetwork.ad_subnet,
     google_compute_router.ad_router,
   google_compute_router_nat.ad_nat]
 }
 
-# ==========================================================================================
+# ==============================================================================
 # Local Variable: users_json
-# ------------------------------------------------------------------------------------------
-# - Renders a JSON file (`users.json.template`) into a single JSON blob
-# - Injects unique random passwords for test/demo users
-# - Template variables are replaced with real values at runtime
-# - Passed into the VM bootstrap so users are created automatically
-# ==========================================================================================
+# ------------------------------------------------------------------------------
+# Renders users.json.template into a single JSON blob.
+# Injects unique random passwords for demo users.
+# Template variables are replaced at runtime.
+# Passed into VM bootstrap for automatic user creation.
+# ==============================================================================
 
 locals {
   users_json = templatefile("./scripts/users.json.template", {
@@ -47,4 +47,3 @@ locals {
     akumar_password = local.passwords["akumar"]  # Random password for Amit Kumar
   })
 }
-
