@@ -25,7 +25,7 @@
 #   - All subnets must be manually defined.
 # ==============================================================================
 resource "google_compute_network" "ad_vpc" {
-  name                    = var.zone
+  name                    = var.vpc
   auto_create_subnetworks = false
 }
 
