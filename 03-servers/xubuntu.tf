@@ -38,7 +38,7 @@ resource "random_string" "vm_suffix" {
 # ==============================================================================
 resource "google_compute_firewall" "allow_ssh" {
   name    = "xubuntu-allow-ssh"
-  network = "ad-vpc"
+  network = var.vpc
 
   allow {
     protocol = "tcp"
@@ -63,7 +63,7 @@ resource "google_compute_firewall" "allow_ssh" {
 # ==============================================================================
 resource "google_compute_firewall" "allow_smb" {
   name    = "xubuntu-allow-smb"
-  network = "ad-vpc"
+  network = var.vpc
 
   allow {
     protocol = "tcp"
