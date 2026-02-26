@@ -25,7 +25,7 @@ resource "google_filestore_instance" "nfs_server" {
   # - Location must be a zone, not just a region.
   # - Project ID is pulled from local credentials.
   # ----------------------------------------------------------------------------
-  name     = "nfs-server"
+  name     = "xubuntu-nfs-server"
   tier     = "BASIC_HDD"     # Reverted to Basic HDD
   location = "us-central1-b" # Zonal, not regional
   project  = local.credentials.project_id
