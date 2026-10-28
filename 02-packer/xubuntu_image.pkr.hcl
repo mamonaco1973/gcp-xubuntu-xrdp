@@ -23,7 +23,7 @@ packer {
 
 locals {
   timestamp = regex_replace(timestamp(), "[- TZ:]", "") # Compact timestamp (YYYYMMDDHHMMSS)
-                                                       # Used to generate unique image names
+  # Used to generate unique image names
 }
 
 # ==============================================================================
@@ -54,13 +54,14 @@ variable "source_image_family" {
 source "googlecompute" "xubuntu_image" {
   project_id          = var.project_id
   zone                = var.zone
-  source_image_family = var.source_image_family         # Base Ubuntu 26.04 LTS image family
-  ssh_username        = "ubuntu"                        # Default Ubuntu user on GCE images
-  machine_type        = "n2-standard-4"                 # Temporary build VM machine type
+  source_image_family = var.source_image_family # Base Ubuntu 26.04 LTS image family
+  ssh_username        = "ubuntu"                # Default Ubuntu user on GCE images
+  machine_type        = "n2-standard-4"         # Temporary build VM machine type
 
-  image_name   = "xubuntu-image-${local.timestamp}"     # Unique image name per build
-  image_family = "xubuntu-images"                       # Image family for versioned builds
-  disk_size    = 64                                     # Boot disk size (GB) for build VM
+  image_name    = "xubuntu-image-${local.timestamp}" # Unique image name per build
+  image_family  = "xubuntu-images"                   # Image family for versioned builds
+  disk_size     = 64                                 # Boot disk size (GB) for build VM
+  state_timeout = "30m"                              # Image registration can exceed the 5m default
 }
 
 # ==============================================================================
