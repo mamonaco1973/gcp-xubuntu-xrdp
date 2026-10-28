@@ -4,8 +4,8 @@
 # Provisions:
 #   1. Random suffix for unique resource naming.
 #   2. Firewall rules for SSH (22) and SMB (445).
-#   3. Ubuntu 24.04 VM as NFS gateway and AD client.
-#   4. Data source for latest Ubuntu 24.04 LTS image.
+#   3. Ubuntu 26.04 VM as NFS gateway and AD client.
+#   4. Data source for latest Ubuntu 26.04 LTS image.
 #
 # Key Points:
 #   - Random suffix prevents name collisions.
@@ -80,7 +80,7 @@ resource "google_compute_firewall" "allow_smb" {
 # ==============================================================================
 # Xubuntu VM: NFS Gateway and AD-Joined Desktop
 # ==============================================================================
-# Deploys a Xubuntu 24.04 VM that:
+# Deploys a Xubuntu 26.04 VM that:
 #   - Connects to ad-vpc and ad-subnet.
 #   - Boots from custom Packer-built image.
 #   - Joins AD and mounts Filestore at boot.
@@ -147,11 +147,11 @@ resource "google_compute_instance" "desktop_instance" {
 
 
 # ==============================================================================
-# Data Source: Latest Ubuntu 24.04 LTS Image
+# Data Source: Latest Ubuntu 26.04 LTS Image
 # ==============================================================================
-# Fetches most recent Ubuntu 24.04 LTS image from ubuntu-os-cloud.
+# Fetches most recent Ubuntu 26.04 LTS image from ubuntu-os-cloud.
 # ==============================================================================
 data "google_compute_image" "ubuntu_latest" {
-  family  = "ubuntu-2404-lts-amd64"
+  family  = "ubuntu-2604-lts-amd64"
   project = "ubuntu-os-cloud"
 }

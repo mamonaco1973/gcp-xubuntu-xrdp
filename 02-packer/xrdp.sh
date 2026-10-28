@@ -20,7 +20,10 @@ set -euo pipefail
 # Step 1: Install XRDP
 # ================================================================================
 sudo apt-get update -y
-sudo apt-get install -y xrdp
+sudo apt-get install -y xrdp xorgxrdp
+
+# XRDP reads the private key of its TLS certificate (the snakeoil pair).
+sudo adduser xrdp ssl-cert
 
 # ================================================================================
 # Step 2: Replace /etc/xrdp/startwm.sh with XFCE session launcher
@@ -42,7 +45,13 @@ if test -r ~/.profile; then
     . ~/.profile
 fi
 
-startxfce4
+# XRDP starts Xorg with "-auth .Xauthority" but does not export XAUTHORITY.
+# Ordinary apps find ~/.Xauthority by default; snaps run with a redirected
+# $HOME and do not, so X refuses them ("Authorization required").
+# An absolute XAUTHORITY lets snapd hand the cookie to the snap.
+export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+
+exec startxfce4
 EOF
 
 # ================================================================================
@@ -59,22 +68,13 @@ sudo systemctl enable xrdp
 echo "NOTE: XRDP installation and configuration complete."
 
 # ---------------------------------------------------------------------------------
-# Deploy PAM script to create home directories on first xrdp login
+# PAM: environment, then the system stack (SSSD + mkhomedir)
 # ---------------------------------------------------------------------------------
+# Home directories come from pam_mkhomedir in common-session, enabled at boot
+# by userdata.sh (pam-auth-update --enable mkhomedir; HOME_MODE 0700).
 
-cat <<'EOF' | tee /etc/pam.d/xrdp-mkhomedir.sh > /dev/null
-#!/bin/bash
-echo "NOTE: Creating home directory for user $PAM_USER" 
-su -c "exit" $PAM_USER
-chmod 700 /home/*
-EOF
-
-chmod +x /etc/pam.d/xrdp-mkhomedir.sh
-
-# Create /etc/pam.d/xrdp-sesman with required PAM configuration
 cat >/etc/pam.d/xrdp-sesman <<'EOF'
 #%PAM-1.0
-auth optional pam_exec.so debug /etc/pam.d/xrdp-mkhomedir.sh
 auth required pam_env.so readenv=1
 auth required pam_env.so readenv=1 envfile=/etc/default/locale
 @include common-auth
@@ -84,3 +84,21 @@ auth required pam_env.so readenv=1 envfile=/etc/default/locale
 EOF
 
 echo "NOTE: Created /etc/pam.d/xrdp-sesman successfully."
+
+# ---------------------------------------------------------------------------------
+# Quiet polkit prompts in remote sessions
+# ---------------------------------------------------------------------------------
+# Remote sessions otherwise get polkit prompts for colour management and
+# package refreshes ("Authentication is required to create a color profile").
+
+mkdir -p /etc/polkit-1/rules.d
+cat >/etc/polkit-1/rules.d/45-xrdp-quiet.rules <<'EOF'
+polkit.addRule(function(action, subject) {
+  if (action.id.indexOf("org.freedesktop.color-manager.") === 0 ||
+      action.id === "org.freedesktop.packagekit.system-sources-refresh") {
+    return polkit.Result.YES;
+  }
+});
+EOF
+
+echo "NOTE: Polkit rule for XRDP sessions installed."

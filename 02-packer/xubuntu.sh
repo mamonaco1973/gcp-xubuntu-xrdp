@@ -78,13 +78,11 @@ sudo mkdir -p /etc/skel/Desktop
 # Step 5: Replace default XFCE background image
 # ================================================================================
 
-cd /usr/share/backgrounds/xfce
-
-# Backup original wallpaper for safety
-sudo mv xfce-shapes.svg xfce-shapes.svg.bak
-
-# Replace with an existing, stable wallpaper
-sudo cp xfce-leaves.svg xfce-shapes.svg
+# Xubuntu sets no wallpaper in its xfconf defaults; xfdesktop falls back to
+# /usr/share/xfce4/backdrops/xubuntu-wallpaper.png, a symlink to the release
+# artwork. Point it at the Xfce leaves wallpaper instead.
+sudo ln -sf /usr/share/backgrounds/xfce/xfce-leaves.svg \
+  /usr/share/xfce4/backdrops/xubuntu-wallpaper.png
 
 
 # ================================================================================
